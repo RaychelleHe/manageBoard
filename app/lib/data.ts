@@ -35,9 +35,9 @@ export async function fetchRevenue() {
 export async function fetchLatestInvoices() {
   try {
     const data = await sql<LatestInvoiceRaw>`
-      SELECT invoices.amount, customers.name, customers.image_url, customers.email, invoices.id
+      SELECT invoices.amount, users.name, users.image_url, users.email, invoices.id
       FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
+      JOIN users ON invoices.customer_id = users.id
       ORDER BY invoices.date DESC
       LIMIT 5`;
 
@@ -58,7 +58,7 @@ export async function fetchCardData() {
     // However, we are intentionally splitting them to demonstrate
     // how to initialize multiple queries in parallel with JS.
     const invoiceCountPromise = sql`SELECT COUNT(*) FROM invoices`;
-    const customerCountPromise = sql`SELECT COUNT(*) FROM customers`;
+    const customerCountPromise = sql`SELECT COUNT(*) FROM users`;
     const invoiceStatusPromise = sql`SELECT
          SUM(CASE WHEN status = 'paid' THEN amount ELSE 0 END) AS "paid",
          SUM(CASE WHEN status = 'pending' THEN amount ELSE 0 END) AS "pending"
@@ -88,6 +88,7 @@ export async function fetchCardData() {
 }
 
 const ITEMS_PER_PAGE = 6;
+
 export async function fetchFilteredInvoices(
   query: string,
   currentPage: number,
@@ -101,14 +102,14 @@ export async function fetchFilteredInvoices(
         invoices.amount,
         invoices.date,
         invoices.status,
-        customers.name,
-        customers.email,
-        customers.image_url
+        users.name,
+        users.email,
+        users.image_url
       FROM invoices
-      JOIN customers ON invoices.customer_id = customers.id
+      JOIN users ON invoices.customer_id = users.id
       WHERE
-        customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`} OR
+        users.name ILIKE ${`%${query}%`} OR
+        users.email ILIKE ${`%${query}%`} OR
         invoices.amount::text ILIKE ${`%${query}%`} OR
         invoices.date::text ILIKE ${`%${query}%`} OR
         invoices.status ILIKE ${`%${query}%`}
@@ -127,10 +128,10 @@ export async function fetchInvoicesPages(query: string) {
   try {
     const count = await sql`SELECT COUNT(*)
     FROM invoices
-    JOIN customers ON invoices.customer_id = customers.id
+    JOIN users ON invoices.customer_id = users.id
     WHERE
-      customers.name ILIKE ${`%${query}%`} OR
-      customers.email ILIKE ${`%${query}%`} OR
+      users.name ILIKE ${`%${query}%`} OR
+      users.email ILIKE ${`%${query}%`} OR
       invoices.amount::text ILIKE ${`%${query}%`} OR
       invoices.date::text ILIKE ${`%${query}%`} OR
       invoices.status ILIKE ${`%${query}%`}
@@ -175,7 +176,7 @@ export async function fetchCustomers() {
       SELECT
         id,
         name
-      FROM customers
+      FROM users
       ORDER BY name ASC
     `;
 
@@ -191,20 +192,20 @@ export async function fetchFilteredCustomers(query: string) {
   try {
     const data = await sql<CustomersTableType>`
 		SELECT
-		  customers.id,
-		  customers.name,
-		  customers.email,
-		  customers.image_url,
+    users.id,
+    users.name,
+    users.email,
+    users.image_url,
 		  COUNT(invoices.id) AS total_invoices,
 		  SUM(CASE WHEN invoices.status = 'pending' THEN invoices.amount ELSE 0 END) AS total_pending,
 		  SUM(CASE WHEN invoices.status = 'paid' THEN invoices.amount ELSE 0 END) AS total_paid
 		FROM customers
-		LEFT JOIN invoices ON customers.id = invoices.customer_id
+		LEFT JOIN invoices ON users.id = invoices.customer_id
 		WHERE
-		  customers.name ILIKE ${`%${query}%`} OR
-        customers.email ILIKE ${`%${query}%`}
-		GROUP BY customers.id, customers.name, customers.email, customers.image_url
-		ORDER BY customers.name ASC
+    users.name ILIKE ${`%${query}%`} OR
+    users.email ILIKE ${`%${query}%`}
+		GROUP BY users.id, users.name, users.email, users.image_url
+		ORDER BY users.name ASC
 	  `;
 
     const customers = data.rows.map((customer) => ({

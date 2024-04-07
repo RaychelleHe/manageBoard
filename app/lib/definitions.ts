@@ -1,21 +1,40 @@
 // This file contains type definitions for your data.
 // It describes the shape of the data, and what data type each property should accept.
 // For simplicity of teaching, we're manually defining these types.
+
+import { type } from "os";
+import { number } from "zod";
+
 // However, these types are generated automatically if you're using an ORM such as Prisma.
 export type User = {
   id: string;
   name: string;
   email: string;
   password: string;
+  image_url:string;
 };
 
-export type Customer = {
+export type Manager = {
   id: string;
   name: string;
   email: string;
   image_url: string;
 };
 
+export type Food = {
+  name:string;
+  price:number;
+  date:string;
+  stock:number;
+  image_url:string;
+}
+export type Toy = {
+  name:string;
+  price:number;
+  date:string;
+  stock:number;
+  image_url:string;
+}
 export type Invoice = {
   id: string;
   customer_id: string;
@@ -25,6 +44,12 @@ export type Invoice = {
   // It means that the "status" property can only be one of the two strings: 'pending' or 'paid'.
   status: 'pending' | 'paid';
 };
+
+export type ShoppingList = {
+  invoices_id : string;
+  goods_id:string;
+  type:string
+}
 
 export type Revenue = {
   month: string;

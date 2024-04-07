@@ -1,9 +1,11 @@
 const { db } = require('@vercel/postgres');
 const {
   invoices,
-  customers,
   revenue,
   users,
+  managers,
+  food,
+  toys,
 } = require('../app/lib/placeholder-data.js');
 const bcrypt = require('bcrypt');
 
@@ -16,7 +18,8 @@ async function seedUsers(client) {
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email TEXT NOT NULL UNIQUE,
-        password TEXT NOT NULL
+        password TEXT NOT NULL,
+        image_url VARCHAR(255) NOT NULL
       );
     `;
 
@@ -27,8 +30,8 @@ async function seedUsers(client) {
       users.map(async (user) => {
         const hashedPassword = await bcrypt.hash(user.password, 10);
         return client.sql`
-        INSERT INTO users (id, name, email, password)
-        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword})
+        INSERT INTO users (id, name, email, password,image_url)
+        VALUES (${user.id}, ${user.name}, ${user.email}, ${hashedPassword},${user.image_url})
         ON CONFLICT (id) DO NOTHING;
       `;
       }),
@@ -44,6 +47,80 @@ async function seedUsers(client) {
     console.error('Error seeding users:', error);
     throw error;
   }
+}
+
+async function seedToys(client){
+  try{
+    await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+    const createTable = await client.sql`
+        CREATE TABLE IF NOT EXISTS toys (
+          id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          price INT NOT NULL,
+          date DATE NOT NULL,
+          stock INT NOT NULL,
+          image_url VARCHAR(255) NOT NULL
+        );
+      `;
+      console.log(`Created "toys" table`);
+    // Insert data into the "users" table
+    const insertedToys = await Promise.all(
+      toys.map(async (toy) => {
+        return client.sql`
+        INSERT INTO toys (name, price, date,stock,image_url)
+        VALUES (${toy.name}, ${toy.price}, ${toy.date},${toy.stock},${toy.image_url})
+        ON CONFLICT (id) DO NOTHING;
+      `;
+      }),
+    );
+  
+    console.log(`Seeded ${insertedToys.length} users`);
+    
+    return {
+      createTable,
+      toys: insertedToys,
+    };
+  }catch(error){
+    console.error('Error seeding toys:', error);
+    throw error;
+  }
+}
+
+async function seedFood(client){
+try{
+  await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
+  const createTable = await client.sql`
+      CREATE TABLE IF NOT EXISTS food (
+        id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        price INT NOT NULL,
+        date DATE NOT NULL,
+        stock INT NOT NULL,
+        image_url VARCHAR(255) NOT NULL
+      );
+    `;
+    console.log(`Created "food" table`);
+  // Insert data into the "food" table
+  const insertedFood = await Promise.all(
+    food.map(async (food) => {
+      return client.sql`
+      INSERT INTO food (name, price, date,stock,image_url)
+      VALUES (${food.name}, ${food.price}, ${food.date},${food.stock},${food.image_url})
+      ON CONFLICT (id) DO NOTHING;
+    `;
+    }),
+  );
+
+  console.log(`Seeded ${insertedFood.length} users`);
+
+  return {
+    createTable,
+    food: insertedFood,
+  };
+}catch(error){
+  console.error('Error seeding food:', error);
+  throw error;
+}
 }
 
 async function seedInvoices(client) {
@@ -86,13 +163,13 @@ async function seedInvoices(client) {
   }
 }
 
-async function seedCustomers(client) {
+async function seedManagers(client) {
   try {
     await client.sql`CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
 
-    // Create the "customers" table if it doesn't exist
+    // Create the "managers" table if it doesn't exist
     const createTable = await client.sql`
-      CREATE TABLE IF NOT EXISTS customers (
+      CREATE TABLE IF NOT EXISTS managers (
         id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) NOT NULL,
@@ -100,27 +177,27 @@ async function seedCustomers(client) {
       );
     `;
 
-    console.log(`Created "customers" table`);
+    console.log(`Created "managers" table`);
 
-    // Insert data into the "customers" table
-    const insertedCustomers = await Promise.all(
-      customers.map(
-        (customer) => client.sql`
-        INSERT INTO customers (id, name, email, image_url)
-        VALUES (${customer.id}, ${customer.name}, ${customer.email}, ${customer.image_url})
+    // Insert data into the "managers" table
+    const insertedManagers = await Promise.all(
+      managers.map(
+        (manager) => client.sql`
+        INSERT INTO managers (id, name, email, image_url)
+        VALUES (${manager.id}, ${manager.name}, ${manager.email}, ${manager.image_url})
         ON CONFLICT (id) DO NOTHING;
       `,
       ),
     );
 
-    console.log(`Seeded ${insertedCustomers.length} customers`);
+    console.log(`Seeded ${insertedManagers.length} managers`);
 
     return {
       createTable,
-      customers: insertedCustomers,
+      managers: insertedManagers,
     };
   } catch (error) {
-    console.error('Error seeding customers:', error);
+    console.error('Error seeding managers:', error);
     throw error;
   }
 }
@@ -164,7 +241,9 @@ async function main() {
   const client = await db.connect();
 
   await seedUsers(client);
-  await seedCustomers(client);
+  await seedManagers(client);
+  await seedFood(client);
+  await seedToys(client);
   await seedInvoices(client);
   await seedRevenue(client);
 
