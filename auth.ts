@@ -2,7 +2,7 @@ import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
-//import { sql } from '@vercel/postgres';
+import { sql } from '@vercel/postgres';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
 import axios from 'axios';
@@ -42,9 +42,9 @@ export const { auth, signIn, signOut } = NextAuth({
           .safeParse(credentials);
           if (parsedCredentials.success) {
             const { email, password} = parsedCredentials.data;
-            var user
-            user = (await axios.get(`http://localhost/api/users/readUser.php?email=${email}`)).data
-            // const user = await getUser(email);
+            //var user
+            //user = (await axios.get(`http://localhost/api/users/readUser.php?email=${email}`)).data
+            const user = await getUser(email);
             if (!user) return null;
             const passwordsMatch = await bcrypt.compare(password, user.password);
             if (passwordsMatch) return user;
