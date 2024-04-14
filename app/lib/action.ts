@@ -6,7 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { signIn } from '@/auth';
 import { AuthError } from 'next-auth';
-
+import axios from 'axios';
 const FormSchema = z.object({
   id: z.string(),
   customerId: z.string({
@@ -43,18 +43,33 @@ export async function createInvoice(prevState: State, formData: FormData) {
     const { customerId, amount, status } = validatedFields.data;
     const amountInCents = amount * 100;
     const date = new Date().toISOString().split('T')[0];
-   
-    try {
-      await sql`
-        INSERT INTO invoices (customer_id, amount, status, date)
-        VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
-      `;
-    } catch (error) {
+    //const res = await 
+    // try {
+    //   await sql`
+    //     INSERT INTO invoices (customer_id, amount, status, date)
+    //     VALUES (${customerId}, ${amountInCents}, ${status}, ${date})
+    //   `;
+    // } catch (error) {
+    //   return {
+    //     message: 'Database Error: Failed to Create Invoice.',
+    //   };
+    // }
+    const {data} = await axios.post( `${process.env.BASE_URL}/invoices/addInvoice.php`, {
+      customer_id:customerId,
+      amount:amountInCents,
+      status:status,
+      date:date
+    }, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    });
+    if(data!=="suc"){
       return {
-        message: 'Database Error: Failed to Create Invoice.',
-      };
+            message: 'Database Error: Failed to Create Invoice.',
+          };
     }
-   
+
     revalidatePath('/manageDashboard/invoices');
     redirect('/manageDashboard/invoices');
   }
@@ -70,14 +85,28 @@ export async function updateInvoice(id: string, formData: FormData) {
    
     const amountInCents = amount * 100;
    
-    try {
-        await sql`
-            UPDATE invoices
-            SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
-            WHERE id = ${id}
-          `;
-      } catch (error) {
-        return { message: 'Database Error: Failed to Update Invoice.' };
+    // try {
+    //     await sql`
+    //         UPDATE invoices
+    //         SET customer_id = ${customerId}, amount = ${amountInCents}, status = ${status}
+    //         WHERE id = ${id}
+    //       `;
+    //   } catch (error) {
+    //     return { message: 'Database Error: Failed to Update Invoice.' };
+    //   }
+      const {data} = await axios.post(`${process.env.BASE_URL}/invoice/editInvoice.php`, {
+        customer_id:customerId,
+        amount:amountInCents,
+        status:status,
+      }, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      });
+      if(data!=="suc"){
+        return {
+              message: 'Database Error: Failed to Update Invoice.',
+            };
       }
    
     revalidatePath('/manageDashboard/invoices');
@@ -85,14 +114,20 @@ export async function updateInvoice(id: string, formData: FormData) {
   }
 
   export async function deleteInvoice(id: string) {
-    throw new Error('Failed to Delete Invoice');
-    try {
-      await sql`DELETE FROM invoices WHERE id = ${id}`;
-      revalidatePath('/dashboard/invoices');
-      return { message: 'Deleted Invoice.' };
-    } catch (error) {
-      return { message: 'Database Error: Failed to Delete Invoice.' };
-    }
+    // throw new Error('Failed to Delete Invoice');
+    // try {
+    //   await sql`DELETE FROM invoices WHERE id = ${id}`;
+    //   revalidatePath('/dashboard/invoices');
+    //   return { message: 'Deleted Invoice.' };
+    // } catch (error) {
+    //   return { message: 'Database Error: Failed to Delete Invoice.' };
+    // }
+    const {data} = await axios.get(`${process.env.BASE_URL}/deleteInvoice.php?id=${id}`);
+      if(data!=="suc"){
+        return {
+              message: 'Database Error: Failed to Delete Invoice.',
+            };
+      }
   }
 
   export async function authenticate(
