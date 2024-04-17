@@ -54,11 +54,12 @@ export async function createInvoice(prevState: State, formData: FormData) {
     //     message: 'Database Error: Failed to Create Invoice.',
     //   };
     // }
-    const {data} = await axios.post( `${process.env.BASE_URL}/invoices/addInvoice.php`, {
+    const path = ''
+    const {data} = await axios.post( `http://localhost:9876/invoices/addInvoice.php`, {
       customer_id:customerId,
       amount:amountInCents,
       status:status,
-      date:date
+      date:date,
     }, {
       headers: {
         'Content-Type': 'multipart/form-data'
@@ -94,7 +95,7 @@ export async function updateInvoice(id: string, formData: FormData) {
     //   } catch (error) {
     //     return { message: 'Database Error: Failed to Update Invoice.' };
     //   }
-      const {data} = await axios.post(`${process.env.BASE_URL}/invoice/editInvoice.php`, {
+      const {data} = await axios.post(`http://localhost:9876/invoices/editInvoice.php`, {
         customer_id:customerId,
         amount:amountInCents,
         status:status,
@@ -122,7 +123,7 @@ export async function updateInvoice(id: string, formData: FormData) {
     // } catch (error) {
     //   return { message: 'Database Error: Failed to Delete Invoice.' };
     // }
-    const {data} = await axios.get(`${process.env.BASE_URL}/deleteInvoice.php?id=${id}`);
+    const {data} = await axios.get(`http://localhost:9876/invoices/deleteInvoice.php?id=${id}`);
       if(data!=="suc"){
         return {
               message: 'Database Error: Failed to Delete Invoice.',

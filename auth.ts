@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import { authConfig } from './auth.config';
 import Credentials from 'next-auth/providers/credentials';
 import { z } from 'zod';
+// import { getSession } from 'next-auth/client'
 import { sql } from '@vercel/postgres';
 import type { User } from '@/app/lib/definitions';
 import bcrypt from 'bcrypt';
@@ -40,18 +41,36 @@ export const { auth, signIn, signOut } = NextAuth({
         const parsedCredentials = z
           .object({ email: z.string().email(), password: z.string().min(6)})
           .safeParse(credentials);
-          if (parsedCredentials.success) {
-            const { email, password} = parsedCredentials.data;
-            var user
-            user = (await axios.get(`http://localhost:3000/users/readUser.php?email=${email}`)).data
-            if (!user) return null;
-            const passwordsMatch = await bcrypt.compare(password, user.password);
-            console.log(password, user.password)
-            user = {id:user.id,name:user.name,email:user.email,image:user.image_url}
-            if (passwordsMatch) return user;
-          }
-          return null
+        if (parsedCredentials.success) {
+          const { email, password} = parsedCredentials.data;
+          var user
+          user = (await axios.get(`http://localhost:9876/authManagers/login.php?email=${email}&password=${password}`)).data
+          if (!user) return null;
+          user = {id:user.id,name:user.name,email:user.email,image:user.image_url}
+          console.log(user)
+          return user;
+        } else {
+          return null;
+        }
       },
     }),
   ],
 });
+
+
+const getSession = async () => {
+  try {
+    const response = await axios.get('http://localhost:9876/authManagers/getSession.php');
+    if (response.data.loggedin) {
+      console.log('User is logged in.');
+      console.log('User ID:', response.data.id);
+      console.log('User Email:', response.data.email);
+    } else {
+      console.log('No session found.');
+    }
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+// getSession();
